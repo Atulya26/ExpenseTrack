@@ -1,29 +1,21 @@
-// Firebase config - These are placeholders. The actual config will be provided by the environment.
-// const firebaseConfig = {
-//   apiKey: "YOUR_API_KEY",
-//   authDomain: "YOUR_AUTH_DOMAIN",
-//   projectId: "YOUR_PROJECT_ID",
-//   storageBucket: "YOUR_STORAGE_BUCKET",
-//   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-//   appId: "YOUR_APP_ID",
-//   measurementId: "YOUR_MEASUREMENT_ID"
-// };
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAse2I0D2TlfyXXzhoHTraG5R6QEphllVE",
+  authDomain: "spliy-expense-app.firebaseapp.com",
+  projectId: "spliy-expense-app",
+  storageBucket: "spliy-expense-app.firebasestorage.app",
+  messagingSenderId: "530776942195",
+  appId: "1:530776942195:web:5838e23c250d5e721e2c06",
+  measurementId: "G-9ZCE53653E"
+};
 
-// Initialize Firebase using global variables provided by the environment
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-console.log('Firebase Config:', firebaseConfig);
-console.log('App ID:', appId);
-
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
 let userId = null;
 let groups = [];
-let activeGroup = null; // Stores the currently selected group's data
+let activeGroup = null;
 let loading = true;
 let errorMessage = null;
 
@@ -35,22 +27,17 @@ const sidebarRoot = document.getElementById('sidebar-root');
  * Includes group selection, new group button, and user ID display.
  */
 function renderSidebar() {
-  console.log('Rendering sidebar. User ID:', userId, 'Groups:', groups, 'Active Group:', activeGroup);
   sidebarRoot.innerHTML = `
-    <div class="flex flex-col gap-4">
-      <div>
-        <h1 class="text-2xl font-bold mb-2 text-gray-800">Expense Splitter</h1>
-        <p class="text-gray-600 mb-4">Split bills fairly among friends</p>
-      </div>
-      <button id="new-group-btn" class="btn-primary w-full flex items-center justify-center gap-2">
-        <i data-lucide="plus" class="h-5 w-5"></i> New Group
-      </button>
+    <div>
+      <h1 class="text-2xl font-bold mb-2">Expense Splitter</h1>
+      <p class="text-gray-600 mb-4">Split bills fairly among friends</p>
+      <button id="new-group-btn" class="btn-primary w-full mb-3 flex items-center justify-center gap-2"><i data-lucide="plus" class="h-5 w-5"></i> New Group</button>
       <div class="mb-2 text-xs text-gray-700 bg-gray-100 p-2 rounded-lg">
         <span>Your User ID:</span>
-        <span class="font-mono font-semibold text-indigo-700 break-all">${userId || 'Loading...'}</span>
+        <span class="font-mono font-semibold text-indigo-700 break-all">${userId || ''}</span>
       </div>
       <div class="mb-2">
-        <label for="group-select" class="block text-xs font-medium text-gray-700 mb-1">Select Group</label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Select Group</label>
         <select id="group-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
           <option value="">Choose a group...</option>
           ${groups.map(g => `<option value="${g.id}" ${activeGroup && g.id === activeGroup.id ? 'selected' : ''}>${g.name}</option>`).join('')}
@@ -58,16 +45,17 @@ function renderSidebar() {
       </div>
     </div>
   `;
-  lucide.createIcons(); // Initialize Lucide icons after injecting HTML
-
-  // Attach event listeners for sidebar elements
-  document.getElementById('new-group-btn').onclick = showCreateGroupForm;
-  document.getElementById('group-select').onchange = (e) => {
+  lucide.createIcons();
+  // Sidebar event listeners
+  const newGroupBtn = document.getElementById('new-group-btn');
+  if (newGroupBtn) newGroupBtn.onclick = showCreateGroupForm;
+  const groupSelect = document.getElementById('group-select');
+  if (groupSelect) groupSelect.onchange = (e) => {
     const group = groups.find(g => g.id === e.target.value);
     activeGroup = group || null;
-    console.log('Group selected:', activeGroup);
-    // Re-fetch members and expenses for the newly selected group
     fetchMembersAndExpenses();
+    renderSidebar();
+    renderApp();
   };
 }
 
@@ -76,18 +64,26 @@ function renderSidebar() {
  * This function structures the dashboard into a grid layout.
  */
 function renderApp() {
-  console.log('Rendering app. Loading:', loading, 'Error:', errorMessage, 'Active Group:', activeGroup);
   if (loading) {
-    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh] col-span-full row-span-full"><div class="text-indigo-600 text-xl font-semibold">Loading...</div></div>`;
+    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh]"><div class="text-indigo-600 text-xl font-semibold">Loading...</div></div>`;
     return;
   }
   if (errorMessage) {
-    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh] col-span-full row-span-full"><div class="bg-white p-6 rounded-xl shadow-lg text-red-700"><h3 class="text-lg font-semibold mb-2">Error:</h3><p>${errorMessage}</p></div></div>`;
+    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh]"><div class="bg-white p-6 rounded-xl shadow-lg text-red-700"><h3 class="text-lg font-semibold mb-2">Error:</h3><p>${errorMessage}</p></div></div>`;
     return;
   }
+  // Always render the main grid, even if no group is selected
+  // Show a message in each section if no group is selected
   if (!activeGroup) {
-    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh] col-span-full row-span-full"><div class="card text-center text-gray-600"><p class="mb-4">Select an existing group or create a new one to start tracking expenses.</p><button id="create-group-prompt-btn" class="btn-primary">Create New Group</button></div></div>`;
-    document.getElementById('create-group-prompt-btn').onclick = showCreateGroupForm;
+    appRoot.innerHTML = `
+      <div style="display: contents;">
+        <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">No group selected. Please create or select a group.</section>
+        <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">No group selected.</section>
+        <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">No group selected.</section>
+        <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">No group selected.</section>
+        <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">No group selected.</section>
+      </div>
+    `;
     return;
   }
 
@@ -508,14 +504,14 @@ async function createGroup(data) {
   errorMessage = null;
   renderApp(); // Show loading state
   try {
-    const groupRef = await db.collection(`artifacts/${appId}/public/data/groups`).add({
+    const groupRef = await db.collection(`artifacts/spliy-expense-app/public/data/groups`).add({
       name: data.name,
       description: data.description,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(), // Use server timestamp
       createdBy: userId,
     });
     // Add the current user as the first member of the new group
-    await db.collection(`artifacts/${appId}/public/data/groups/${groupRef.id}/members`).add({
+    await db.collection(`artifacts/spliy-expense-app/public/data/groups/${groupRef.id}/members`).add({
       name: `User ${userId.substring(0, 5)}`, // A simple name for the user
       email: '',
       userId: userId, // Store Firebase UID for this member
@@ -545,7 +541,7 @@ async function addMemberToGroup(data) {
   errorMessage = null;
   renderApp();
   try {
-    await db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/members`).add({
+    await db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/members`).add({
       name: data.name,
       email: data.email,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -573,7 +569,7 @@ async function removeMember(memberId) {
   errorMessage = null;
   renderApp();
   try {
-    await db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/members`).doc(memberId).delete();
+    await db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/members`).doc(memberId).delete();
     console.log('Member removed:', memberId);
   } catch (e) {
     errorMessage = 'Failed to remove member: ' + e.message;
@@ -597,7 +593,7 @@ async function addExpense(data) {
   errorMessage = null;
   renderApp();
   try {
-    await db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/expenses`).add({
+    await db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/expenses`).add({
       description: data.description,
       amount: parseFloat(data.amount),
       paidBy: data.paidBy,
@@ -632,7 +628,7 @@ async function updateExpense(expenseId, data) {
   errorMessage = null;
   renderApp();
   try {
-    await db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/expenses`).doc(expenseId).update({
+    await db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/expenses`).doc(expenseId).update({
       description: data.description,
       amount: parseFloat(data.amount),
       paidBy: data.paidBy,
@@ -665,7 +661,7 @@ async function deleteExpense(expenseId) {
   errorMessage = null;
   renderApp();
   try {
-    await db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/expenses`).doc(expenseId).delete();
+    await db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/expenses`).doc(expenseId).delete();
     console.log('Expense deleted:', expenseId);
   } catch (e) {
     errorMessage = 'Failed to delete expense: ' + e.message;
@@ -770,20 +766,19 @@ function calculateSettlements(balances) {
  */
 function fetchMembersAndExpenses() {
   console.log('Fetching members and expenses for active group:', activeGroup?.id);
-  if (!activeGroup || !userId) {
-    // If no active group or user ID, just render the current state
+  if (!activeGroup) {
     renderSidebar();
     renderApp();
     return;
   }
 
   // Listen for real-time updates to members of the active group
-  db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/members`).onSnapshot((snapshot) => {
+  db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/members`).onSnapshot((snapshot) => {
     activeGroup.members = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     console.log('Members updated:', activeGroup.members);
 
     // Listen for real-time updates to expenses of the active group
-    db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/expenses`).onSnapshot((expSnapshot) => {
+    db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/expenses`).onSnapshot((expSnapshot) => {
       activeGroup.expenses = expSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       console.log('Expenses updated:', activeGroup.expenses);
       loading = false;
@@ -817,7 +812,7 @@ function listenAuth() {
       userId = user.uid;
       console.log('User authenticated:', userId);
       // Listen for real-time updates to the list of groups
-      db.collection(`artifacts/${appId}/public/data/groups`).onSnapshot((snapshot) => {
+      db.collection(`artifacts/spliy-expense-app/public/data/groups`).onSnapshot((snapshot) => {
         groups = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         console.log('Groups updated:', groups);
 
@@ -870,5 +865,7 @@ function listenAuth() {
 // Start listening for authentication state when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM Content Loaded. Initializing app.');
+  renderSidebar();
+  renderApp();
   listenAuth();
 });

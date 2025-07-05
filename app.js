@@ -13,6 +13,9 @@
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+console.log('Firebase Config:', firebaseConfig);
+console.log('App ID:', appId);
+
 // Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -32,6 +35,7 @@ const sidebarRoot = document.getElementById('sidebar-root');
  * Includes group selection, new group button, and user ID display.
  */
 function renderSidebar() {
+  console.log('Rendering sidebar. User ID:', userId, 'Groups:', groups, 'Active Group:', activeGroup);
   sidebarRoot.innerHTML = `
     <div class="flex flex-col gap-4">
       <div>
@@ -61,6 +65,7 @@ function renderSidebar() {
   document.getElementById('group-select').onchange = (e) => {
     const group = groups.find(g => g.id === e.target.value);
     activeGroup = group || null;
+    console.log('Group selected:', activeGroup);
     // Re-fetch members and expenses for the newly selected group
     fetchMembersAndExpenses();
   };
@@ -71,6 +76,7 @@ function renderSidebar() {
  * This function structures the dashboard into a grid layout.
  */
 function renderApp() {
+  console.log('Rendering app. Loading:', loading, 'Error:', errorMessage, 'Active Group:', activeGroup);
   if (loading) {
     appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh] col-span-full row-span-full"><div class="text-indigo-600 text-xl font-semibold">Loading...</div></div>`;
     return;
@@ -259,6 +265,7 @@ function generateSettlementsSection() {
  * This function is called after `renderApp` to ensure elements exist.
  */
 function addEventListeners() {
+  console.log('Attaching event listeners.');
   // Add Member Form Submission (inside the Members card)
   const addMemberForm = document.getElementById('add-member-form');
   if (addMemberForm) {
@@ -270,6 +277,8 @@ function addEventListeners() {
         await addMemberToGroup({ name, email });
         // No need to call renderApp() here, onSnapshot will handle it
         addMemberForm.reset(); // Clear the form
+      } else {
+        console.warn('Member name is required.');
       }
     };
   }
@@ -278,6 +287,7 @@ function addEventListeners() {
   document.querySelectorAll('[data-remove-member]').forEach(btn => {
     btn.onclick = async (e) => {
       const memberId = btn.getAttribute('data-remove-member');
+      console.log('Attempting to remove member:', memberId);
       await removeMember(memberId);
       // No need to call renderApp() here, onSnapshot will handle it
     };
@@ -302,6 +312,8 @@ function addEventListeners() {
         document.getElementById('expense-date').value = new Date().toISOString().split('T')[0]; // Reset date
         // Re-check all splitWith checkboxes by default
         document.querySelectorAll('.expense-splitwith').forEach(cb => cb.checked = true);
+      } else {
+        console.warn('Expense description, amount, and at least one split recipient are required.');
       }
     };
   }
@@ -312,7 +324,10 @@ function addEventListeners() {
       const expenseId = btn.getAttribute('data-edit-expense');
       const expense = activeGroup.expenses.find(e => e.id === expenseId);
       if (expense) {
+        console.log('Editing expense:', expenseId, expense);
         showExpenseModal(expense); // Open modal for editing
+      } else {
+        console.warn('Expense not found for editing:', expenseId);
       }
     };
   });
@@ -321,6 +336,7 @@ function addEventListeners() {
   document.querySelectorAll('[data-delete-expense]').forEach(btn => {
     btn.onclick = async () => {
       const expenseId = btn.getAttribute('data-delete-expense');
+      console.log('Attempting to delete expense:', expenseId);
       await deleteExpense(expenseId);
       // No need to call renderApp() here, onSnapshot will handle it
     };
@@ -331,6 +347,7 @@ function addEventListeners() {
  * Displays a modal for creating a new group.
  */
 function showCreateGroupForm() {
+  console.log('Showing create group form modal.');
   showModal('Create New Group', `
     <div class="mb-4 modal-content">
       <label class="block text-sm font-medium text-gray-700 mb-2">Group Name</label>
@@ -347,7 +364,8 @@ function showCreateGroupForm() {
       await createGroup({ name, description });
       closeModal();
     } else {
-      alert('Group name is required!'); // Use a custom message box in a real app
+      console.error('Group name is required!'); // Log error instead of alert
+      // Implement a custom message box here instead of alert()
     }
   });
 }
@@ -357,6 +375,7 @@ function showCreateGroupForm() {
  * @param {object} [expense=null] - The expense object to edit, or null for a new expense.
  */
 function showExpenseModal(expense = null) {
+  console.log('Showing expense modal. Expense:', expense);
   const members = activeGroup.members || [];
   // Default form data for new expense or pre-fill for editing
   let formData = {
@@ -433,7 +452,8 @@ function showExpenseModal(expense = null) {
       }
       closeModal();
     } else {
-      alert('Please fill in all required fields and select at least one person to split with.'); // Use custom message box
+      console.error('Please fill in all required fields and select at least one person to split with.'); // Log error instead of alert
+      // Implement a custom message box here instead of alert()
     }
   });
 }
@@ -501,6 +521,7 @@ async function createGroup(data) {
       userId: userId, // Store Firebase UID for this member
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+    console.log('Group created with ID:', groupRef.id);
   } catch (e) {
     errorMessage = 'Failed to create group: ' + e.message;
     console.error("Error creating group: ", e);
@@ -529,6 +550,7 @@ async function addMemberToGroup(data) {
       email: data.email,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+    console.log('Member added to group:', activeGroup.id, data.name);
   } catch (e) {
     errorMessage = 'Failed to add member: ' + e.message;
     console.error("Error adding member: ", e);
@@ -552,6 +574,7 @@ async function removeMember(memberId) {
   renderApp();
   try {
     await db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/members`).doc(memberId).delete();
+    console.log('Member removed:', memberId);
   } catch (e) {
     errorMessage = 'Failed to remove member: ' + e.message;
     console.error("Error removing member: ", e);
@@ -585,6 +608,7 @@ async function addExpense(data) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdBy: userId,
     });
+    console.log('Expense added to group:', activeGroup.id, data.description);
   } catch (e) {
     errorMessage = 'Failed to add expense: ' + e.message;
     console.error("Error adding expense: ", e);
@@ -618,6 +642,7 @@ async function updateExpense(expenseId, data) {
       category: data.category,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(), // Add update timestamp
     });
+    console.log('Expense updated:', expenseId, data.description);
   } catch (e) {
     errorMessage = 'Failed to update expense: ' + e.message;
     console.error("Error updating expense: ", e);
@@ -641,6 +666,7 @@ async function deleteExpense(expenseId) {
   renderApp();
   try {
     await db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/expenses`).doc(expenseId).delete();
+    console.log('Expense deleted:', expenseId);
   } catch (e) {
     errorMessage = 'Failed to delete expense: ' + e.message;
     console.error("Error deleting expense: ", e);
@@ -743,6 +769,7 @@ function calculateSettlements(balances) {
  * This function uses onSnapshot to listen for real-time updates.
  */
 function fetchMembersAndExpenses() {
+  console.log('Fetching members and expenses for active group:', activeGroup?.id);
   if (!activeGroup || !userId) {
     // If no active group or user ID, just render the current state
     renderSidebar();
@@ -753,10 +780,12 @@ function fetchMembersAndExpenses() {
   // Listen for real-time updates to members of the active group
   db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/members`).onSnapshot((snapshot) => {
     activeGroup.members = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    console.log('Members updated:', activeGroup.members);
 
     // Listen for real-time updates to expenses of the active group
     db.collection(`artifacts/${appId}/public/data/groups/${activeGroup.id}/expenses`).onSnapshot((expSnapshot) => {
       activeGroup.expenses = expSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Expenses updated:', activeGroup.expenses);
       loading = false;
       errorMessage = null; // Clear any previous errors
       renderSidebar(); // Re-render sidebar to update group select
@@ -782,24 +811,30 @@ function fetchMembersAndExpenses() {
  * Initializes user ID and starts listening for group data once authenticated.
  */
 function listenAuth() {
+  console.log('Listening for auth state changes.');
   auth.onAuthStateChanged(async (user) => {
     if (user) {
       userId = user.uid;
+      console.log('User authenticated:', userId);
       // Listen for real-time updates to the list of groups
       db.collection(`artifacts/${appId}/public/data/groups`).onSnapshot((snapshot) => {
         groups = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('Groups updated:', groups);
 
         // If no active group is selected, or the active group was deleted,
         // try to set the first available group as active.
         if (!activeGroup || !groups.some(g => g.id === activeGroup.id)) {
           activeGroup = groups.length > 0 ? groups[0] : null;
+          console.log('Setting active group to:', activeGroup);
         } else {
           // If active group exists, ensure its data is up-to-date
           const updated = groups.find(g => g.id === activeGroup.id);
           if (updated) {
             activeGroup = { ...activeGroup, ...updated }; // Merge to keep existing sub-collections data
+            console.log('Updating active group data:', activeGroup);
           } else {
             activeGroup = null; // Active group no longer exists
+            console.log('Active group no longer exists, setting to null.');
           }
         }
         fetchMembersAndExpenses(); // Fetch data for the active group
@@ -811,12 +846,15 @@ function listenAuth() {
         console.error("Error fetching groups: ", error);
       });
     } else {
+      console.log('User not authenticated. Attempting anonymous sign-in.');
       // If no user is signed in, try to sign in anonymously using the provided token
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await auth.signInWithCustomToken(__initial_auth_token);
+          console.log('Signed in with custom token.');
         } else {
           await auth.signInAnonymously();
+          console.log('Signed in anonymously.');
         }
       } catch (e) {
         errorMessage = 'Authentication failed: ' + e.message;
@@ -831,5 +869,6 @@ function listenAuth() {
 
 // Start listening for authentication state when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM Content Loaded. Initializing app.');
   listenAuth();
 });

@@ -116,9 +116,9 @@ function renderApp() {
   // Main UI
   appRoot.innerHTML = `
     <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 font-inter">
-      <div class="max-w-6xl mx-auto">
-        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <div class="flex items-center justify-between mb-6">
+      <div class="max-w-4xl mx-auto">
+        <div class="card mb-8">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
             <div class="flex items-center space-x-3">
               <div class="p-3 bg-indigo-100 rounded-full">
                 <i data-lucide="receipt" class="h-8 w-8 text-indigo-600"></i>
@@ -137,7 +137,7 @@ function renderApp() {
             <span>Your User ID: <span class="font-mono font-semibold text-indigo-700 break-all">${userId}</span></span>
             <span class="text-xs text-gray-500 ml-2">(Share this ID for group identification)</span>
           </div>` : ''}
-          <div class="mb-6">
+          <div class="mb-2">
             <label class="block text-sm font-medium text-gray-700 mb-2">Select Group</label>
             <select id="group-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
               <option value="">Choose a group...</option>
@@ -146,36 +146,26 @@ function renderApp() {
           </div>
         </div>
         ${activeGroup ? `
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="section-grid">
           <div class="space-y-6">
-            <div class="bg-white rounded-xl shadow-lg p-6">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-2">
-                  <i data-lucide="users" class="h-5 w-5 text-indigo-600"></i>
-                  <h2 class="text-xl font-semibold text-gray-900">Members</h2>
-                </div>
-                <button id="add-member-btn" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors">
-                  <i data-lucide="user-plus" class="h-4 w-4"></i>
-                </button>
-              </div>
+            <div class="card">
+              <div class="card-header"><i data-lucide="users" class="h-5 w-5 text-indigo-600"></i> Members</div>
+              <button id="add-member-btn" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="h-4 w-4"></i> Add Member</button>
               <div class="space-y-3">${membersHtml}</div>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-6">
-              <div class="flex items-center space-x-2 mb-4">
-                <i data-lucide="calculator" class="h-5 w-5 text-indigo-600"></i>
-                <h2 class="text-xl font-semibold text-gray-900">Balances</h2>
-              </div>
+            <div class="card">
+              <div class="card-header"><i data-lucide="calculator" class="h-5 w-5 text-indigo-600"></i> Balances</div>
               <div class="space-y-3">${balancesHtml}</div>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-6">
-              <h2 class="text-xl font-semibold text-gray-900 mb-4">Suggested Settlements</h2>
+            <div class="card">
+              <div class="card-header">Suggested Settlements</div>
               <div class="space-y-3">${settlementsHtml}</div>
             </div>
           </div>
-          <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-lg p-6">
+          <div class="space-y-6">
+            <div class="card">
               <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-semibold text-gray-900">Expenses</h2>
+                <div class="card-header mb-0"><i data-lucide="file-text" class="h-5 w-5 text-indigo-600"></i> Expenses</div>
                 <button id="add-expense-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
                   <i data-lucide="plus" class="h-5 w-5"></i>
                   <span>Add Expense</span>
@@ -186,7 +176,7 @@ function renderApp() {
           </div>
         </div>
         ` : `
-        <div class="bg-white rounded-xl shadow-lg p-6 text-center text-gray-600">
+        <div class="card text-center text-gray-600">
           <p class="mb-4">Select an existing group or create a new one to start tracking expenses.</p>
           <button id="new-group-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors mx-auto">
             <i data-lucide="plus" class="h-5 w-5"></i>

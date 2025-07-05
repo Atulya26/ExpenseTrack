@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Custom modal z-index for overlays */
+.modal {
+  z-index: 1000;
+}
+
+/* Hide scrollbars for modals if needed */
+.modal::-webkit-scrollbar {
+  display: none;
+} 

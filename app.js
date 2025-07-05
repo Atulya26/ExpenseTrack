@@ -482,30 +482,34 @@ function calculateSettlements(balances) {
 }
 
 function fetchMembersAndExpenses() {
-  if (!activeGroup) return renderApp();
-  // Members
+  if (!activeGroup) {
+    renderSidebar();
+    renderApp();
+    return;
+  }
   db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/members`).onSnapshot((snapshot) => {
     activeGroup.members = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    // Expenses
     db.collection(`artifacts/spliy-expense-app/public/data/groups/${activeGroup.id}/expenses`).onSnapshot((expSnapshot) => {
       activeGroup.expenses = expSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       loading = false;
       errorMessage = null;
+      renderSidebar();
       renderApp();
     }, (err) => {
       errorMessage = 'Failed to load expenses: ' + err.message;
       loading = false;
+      renderSidebar();
       renderApp();
     });
   }, (err) => {
     errorMessage = 'Failed to load members: ' + err.message;
     loading = false;
+    renderSidebar();
     renderApp();
   });
 }
 
 function listenAuth() {
-  showLoading();
   auth.onAuthStateChanged(async (user) => {
     if (user) {
       userId = user.uid;
@@ -518,9 +522,12 @@ function listenAuth() {
           activeGroup = updated || null;
         }
         fetchMembersAndExpenses();
+        renderSidebar();
+        renderApp();
       }, (error) => {
         errorMessage = 'Failed to load groups: ' + error.message;
         loading = false;
+        renderSidebar();
         renderApp();
       });
     } else {
@@ -529,6 +536,7 @@ function listenAuth() {
       } catch (e) {
         errorMessage = 'Authentication failed: ' + e.message;
         loading = false;
+        renderSidebar();
         renderApp();
       }
     }

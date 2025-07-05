@@ -21,170 +21,147 @@ let loading = true;
 let errorMessage = null;
 
 const appRoot = document.getElementById('app-root');
+const sidebarRoot = document.getElementById('sidebar-root');
 
-function showLoading() {
-  appRoot.innerHTML = `<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-    <div class="text-indigo-600 text-xl font-semibold">Loading Expense System...</div>
-  </div>`;
-}
-
-function showError(message) {
-  appRoot.innerHTML = `<div class="min-h-screen flex items-center justify-center bg-red-50">
-    <div class="bg-white p-6 rounded-xl shadow-lg text-red-700">
-      <h3 class="text-lg font-semibold mb-2">Error:</h3>
-      <p>${message}</p>
-      <p class="text-sm mt-2">Please ensure Firebase is correctly configured and your network is stable.</p>
+function renderSidebar() {
+  sidebarRoot.innerHTML = `
+    <div>
+      <h1 class="text-2xl font-bold mb-2">Expense Splitter</h1>
+      <p class="text-gray-600 mb-4">Split bills fairly among friends</p>
+      <button id="new-group-btn" class="btn-primary w-full mb-3 flex items-center justify-center gap-2"><i data-lucide="plus" class="h-5 w-5"></i> New Group</button>
+      <div class="mb-2 text-xs text-gray-700 bg-gray-100 p-2 rounded-lg">
+        <span>Your User ID:</span>
+        <span class="font-mono font-semibold text-indigo-700 break-all">${userId || ''}</span>
+      </div>
+      <div class="mb-2">
+        <label class="block text-xs font-medium text-gray-700 mb-1">Select Group</label>
+        <select id="group-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+          <option value="">Choose a group...</option>
+          ${groups.map(g => `<option value="${g.id}" ${activeGroup && g.id === activeGroup.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+        </select>
+      </div>
     </div>
-  </div>`;
+  `;
+  lucide.createIcons();
+  // Sidebar event listeners
+  document.getElementById('new-group-btn').onclick = showCreateGroupForm;
+  document.getElementById('group-select').onchange = (e) => {
+    const group = groups.find(g => g.id === e.target.value);
+    activeGroup = group || null;
+    fetchMembersAndExpenses();
+  };
 }
 
 function renderApp() {
-  if (loading) return showLoading();
-  if (errorMessage) return showError(errorMessage);
-
-  let groupOptions = groups.map(g => `<option value="${g.id}" ${activeGroup && g.id === activeGroup.id ? 'selected' : ''}>${g.name}</option>`).join('');
-
-  let membersHtml = '';
-  if (activeGroup && activeGroup.members && activeGroup.members.length > 0) {
-    membersHtml = activeGroup.members.map(member => `
-      <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-        <div>
-          <div class="font-medium text-gray-900">${member.name}</div>
-          <div class="text-sm text-gray-600">${member.email || ''}</div>
-        </div>
-        <button class="text-red-600 hover:text-red-800 p-1" data-remove-member="${member.id}">
-          <i data-lucide="trash-2" class="w-4 h-4"></i>
-        </button>
-      </div>
-    `).join('');
-  } else {
-    membersHtml = '<div class="text-center text-gray-500 py-4">No members yet. Add some!</div>';
+  if (loading) {
+    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh]"><div class="text-indigo-600 text-xl font-semibold">Loading...</div></div>`;
+    return;
+  }
+  if (errorMessage) {
+    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh]"><div class="bg-white p-6 rounded-xl shadow-lg text-red-700"><h3 class="text-lg font-semibold mb-2">Error:</h3><p>${errorMessage}</p></div></div>`;
+    return;
+  }
+  if (!activeGroup) {
+    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh]"><div class="card text-center text-gray-600"><p class="mb-4">Select an existing group or create a new one to start tracking expenses.</p></div></div>`;
+    return;
   }
 
-  // Balances and settlements
-  const balances = calculateBalances();
-  const settlements = calculateSettlements(balances);
-
-  let balancesHtml = balances.map(b => `
-    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-      <span class="font-medium text-gray-900">${b.name}</span>
-      <span class="font-bold ${b.balance >= 0 ? 'text-green-600' : 'text-red-600'}">
-        $${Math.abs(b.balance).toFixed(2)} ${b.balance >= 0 ? 'gets back' : 'owes'}
-      </span>
-    </div>
-  `).join('');
-
-  let settlementsHtml = settlements.length > 0 ? settlements.map(s => `
-    <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-      <div class="text-sm text-gray-900">
-        <span class="font-medium">${s.from}</span> owes <span class="font-medium">${s.to}</span> <span class="font-bold text-blue-600">$${s.amount}</span>
+  // Members
+  let membersHtml = `<div class="card-header"><i data-lucide="users" class="h-5 w-5 text-indigo-600"></i> Members</div>
+    <form id="add-member-form" class="flex gap-2 mb-2">
+      <input type="text" id="member-name" placeholder="Name" class="flex-1" required />
+      <input type="email" id="member-email" placeholder="Email (optional)" class="flex-1" />
+      <button type="submit" class="btn-primary">Add Member</button>
+    </form>
+    <div class="member-list">${(activeGroup.members || []).map(member => `
+      <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+        <span>${member.name}</span>
+        <button class="btn-danger p-1" data-remove-member="${member.id}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
       </div>
-    </div>
-  `).join('') : '<div class="text-center text-gray-500 py-4">All settled up! 🎉</div>';
+    `).join('') || '<div class="text-center text-gray-500 py-4">No members yet. Add some!</div>'}</div>`;
 
-  // Expenses
-  let expensesHtml = '';
-  if (activeGroup && activeGroup.expenses && activeGroup.expenses.length > 0) {
-    expensesHtml = activeGroup.expenses.map(expense => `
-      <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+  // Expense Directory
+  let expensesHtml = `<div class="card-header"><i data-lucide="file-text" class="h-5 w-5 text-indigo-600"></i> Expense Directory</div>
+    <div class="expense-list">${(activeGroup.expenses || []).map(expense => `
+      <div class="border border-gray-200 rounded-lg p-3 flex flex-col gap-1">
         <div class="flex items-center justify-between">
-          <div class="flex-1">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="font-semibold text-gray-900">${expense.description}</h3>
-              <div class="flex items-center space-x-2">
-                <button class="text-blue-600 hover:text-blue-800 p-1" data-edit-expense="${expense.id}"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                <button class="text-red-600 hover:text-red-800 p-1" data-delete-expense="${expense.id}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-              </div>
-            </div>
-            <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
-              <span>Paid by: <span class="font-medium">${getMemberName(expense.paidBy)}</span></span>
-              <span class="font-bold text-lg text-gray-900">$${Number(expense.amount).toFixed(2)}</span>
-            </div>
-            <div class="flex items-center justify-between text-sm text-gray-600">
-              <span>Split with: ${expense.splitWith.map(id => getMemberName(id)).join(', ')}</span>
-              <span>${expense.date}</span>
-            </div>
-            ${expense.category ? `<span class="inline-block mt-2 px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">${expense.category}</span>` : ''}
+          <span class="font-semibold">${expense.description}</span>
+          <div class="flex gap-2">
+            <button class="text-blue-600 hover:text-blue-800 p-1" data-edit-expense="${expense.id}"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+            <button class="btn-danger p-1" data-delete-expense="${expense.id}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         </div>
+        <div class="text-xs text-gray-600">Paid by: <span class="font-medium">${getMemberName(expense.paidBy)}</span> | $${Number(expense.amount).toFixed(2)} | ${expense.date}</div>
+        <div class="text-xs text-gray-600">Split with: ${(expense.splitWith || []).map(id => getMemberName(id)).join(', ')}</div>
+        ${expense.category ? `<span class="inline-block mt-1 px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">${expense.category}</span>` : ''}
       </div>
-    `).join('');
-  } else {
-    expensesHtml = '<div class="text-center text-gray-500 py-8">No expenses yet. Add your first expense to get started!</div>';
-  }
+    `).join('') || '<div class="text-center text-gray-500 py-8">No expenses yet. Add your first expense to get started!</div>'}</div>`;
 
-  // Main UI
-  appRoot.innerHTML = `
-    <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 font-inter">
-      <div class="max-w-4xl mx-auto">
-        <div class="card mb-8">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-            <div class="flex items-center space-x-3">
-              <div class="p-3 bg-indigo-100 rounded-full">
-                <i data-lucide="receipt" class="h-8 w-8 text-indigo-600"></i>
-              </div>
-              <div>
-                <h1 class="text-3xl font-bold text-gray-900">Expense Splitter</h1>
-                <p class="text-gray-600">Split bills fairly among friends</p>
-              </div>
-            </div>
-            <button id="new-group-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-              <i data-lucide="plus" class="h-5 w-5"></i>
-              <span>New Group</span>
-            </button>
-          </div>
-          ${userId ? `<div class="mb-4 text-sm text-gray-700 bg-gray-100 p-3 rounded-lg flex items-center justify-between">
-            <span>Your User ID: <span class="font-mono font-semibold text-indigo-700 break-all">${userId}</span></span>
-            <span class="text-xs text-gray-500 ml-2">(Share this ID for group identification)</span>
-          </div>` : ''}
-          <div class="mb-2">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Select Group</label>
-            <select id="group-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-              <option value="">Choose a group...</option>
-              ${groupOptions}
-            </select>
-          </div>
-        </div>
-        ${activeGroup ? `
-        <div class="section-grid">
-          <div class="space-y-6">
-            <div class="card">
-              <div class="card-header"><i data-lucide="users" class="h-5 w-5 text-indigo-600"></i> Members</div>
-              <button id="add-member-btn" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="h-4 w-4"></i> Add Member</button>
-              <div class="space-y-3">${membersHtml}</div>
-            </div>
-            <div class="card">
-              <div class="card-header"><i data-lucide="calculator" class="h-5 w-5 text-indigo-600"></i> Balances</div>
-              <div class="space-y-3">${balancesHtml}</div>
-            </div>
-            <div class="card">
-              <div class="card-header">Suggested Settlements</div>
-              <div class="space-y-3">${settlementsHtml}</div>
-            </div>
-          </div>
-          <div class="space-y-6">
-            <div class="card">
-              <div class="flex items-center justify-between mb-6">
-                <div class="card-header mb-0"><i data-lucide="file-text" class="h-5 w-5 text-indigo-600"></i> Expenses</div>
-                <button id="add-expense-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-                  <i data-lucide="plus" class="h-5 w-5"></i>
-                  <span>Add Expense</span>
-                </button>
-              </div>
-              <div class="space-y-4">${expensesHtml}</div>
-            </div>
-          </div>
-        </div>
-        ` : `
-        <div class="card text-center text-gray-600">
-          <p class="mb-4">Select an existing group or create a new one to start tracking expenses.</p>
-          <button id="new-group-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors mx-auto">
-            <i data-lucide="plus" class="h-5 w-5"></i>
-            <span>Create New Group</span>
-          </button>
-        </div>
-        `}
+  // Add Expense Form
+  const members = activeGroup.members || [];
+  let addExpenseHtml = `<div class="card-header">Add Expense</div>
+    <form id="add-expense-form" class="bg-indigo-50 rounded-lg p-4 flex flex-col gap-2">
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="expense-desc" placeholder="What was this expense for?" required />
       </div>
+      <div class="form-group">
+        <label>Amount ($)</label>
+        <input type="number" id="expense-amount" step="0.01" placeholder="0.00" required />
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="expense-date" value="${new Date().toISOString().split('T')[0]}" required />
+      </div>
+      <div class="form-group">
+        <label>Paid By</label>
+        <select id="expense-paidby">${members.map(m => `<option value="${m.id}">${m.name}</option>`)}</select>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="expense-category">
+          <option value="">Select category...</option>
+          <option value="Food">Food</option>
+          <option value="Accommodation">Accommodation</option>
+          <option value="Transportation">Transportation</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Utilities">Utilities</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Split With</label>
+        <div class="flex flex-wrap gap-2">${members.map(m => `
+          <label class="flex items-center gap-1">
+            <input type="checkbox" class="expense-splitwith" value="${m.id}" checked />
+            <span>${m.name}</span>
+          </label>
+        `).join('')}</div>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button type="submit" class="btn-primary">Add Expense</button>
+        <button type="reset" class="btn-secondary">Cancel</button>
+      </div>
+    </form>`;
+
+  // Balances
+  const balances = calculateBalances();
+  let balancesHtml = `<div class="card-header"><i data-lucide="calculator" class="h-5 w-5 text-indigo-600"></i> Balances</div>
+    <div class="balance-list">${balances.map(b => `<span>${b.name} $${b.balance.toFixed(2)} ${b.balance >= 0 ? 'gets back' : 'owes'}</span>`).join('')}</div>`;
+
+  // Settlements
+  const settlements = calculateSettlements(balances);
+  let settlementsHtml = `<div class="card-header">Suggested Settlements</div>
+    <div class="settlement-list">${settlements.length > 0 ? settlements.map(s => `<span>${s.from} owes ${s.to} <span class="font-bold text-blue-600">$${s.amount}</span></span>`).join('') : 'All settled up! 🎉'}</div>`;
+
+  // Layout: grid areas
+  appRoot.innerHTML = `
+    <div style="display: contents;">
+      <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">${membersHtml}</section>
+      <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">${expensesHtml}</section>
+      <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">${addExpenseHtml}</section>
+      <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">${balancesHtml}</section>
+      <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">${settlementsHtml}</section>
     </div>
   `;
   lucide.createIcons();
@@ -192,49 +169,60 @@ function renderApp() {
 }
 
 function addEventListeners() {
-  // Group selection
-  const groupSelect = document.getElementById('group-select');
-  if (groupSelect) {
-    groupSelect.onchange = (e) => {
-      const group = groups.find(g => g.id === e.target.value);
-      activeGroup = group || null;
-      fetchMembersAndExpenses();
-    };
-  }
-  // New group
-  document.querySelectorAll('#new-group-btn').forEach(btn => {
-    btn.onclick = showCreateGroupModal;
+  // Members
+  document.querySelectorAll('.member-list').forEach(list => {
+    list.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('member-name').value.trim();
+      const email = document.getElementById('member-email').value.trim();
+      if (name) {
+        await addMemberToGroup({ name, email });
+        renderApp(); // Re-render to update member list
+      }
+    });
   });
-  // Add member
-  const addMemberBtn = document.getElementById('add-member-btn');
-  if (addMemberBtn) addMemberBtn.onclick = showAddMemberModal;
-  // Remove member
   document.querySelectorAll('[data-remove-member]').forEach(btn => {
-    btn.onclick = (e) => {
+    btn.onclick = async (e) => {
       const memberId = btn.getAttribute('data-remove-member');
-      removeMember(memberId);
+      await removeMember(memberId);
+      renderApp(); // Re-render to update member list
     };
   });
-  // Add expense
-  const addExpenseBtn = document.getElementById('add-expense-btn');
-  if (addExpenseBtn) addExpenseBtn.onclick = showAddExpenseModal;
-  // Edit/delete expense
-  document.querySelectorAll('[data-edit-expense]').forEach(btn => {
-    btn.onclick = () => {
-      const expenseId = btn.getAttribute('data-edit-expense');
-      const expense = activeGroup.expenses.find(e => e.id === expenseId);
-      showExpenseModal(expense);
-    };
-  });
-  document.querySelectorAll('[data-delete-expense]').forEach(btn => {
-    btn.onclick = () => {
-      const expenseId = btn.getAttribute('data-delete-expense');
-      deleteExpense(expenseId);
-    };
+
+  // Expenses
+  document.querySelectorAll('.expense-list').forEach(list => {
+    list.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const description = document.getElementById('expense-desc').value.trim();
+      const amount = document.getElementById('expense-amount').value;
+      const date = document.getElementById('expense-date').value;
+      const paidBy = document.getElementById('expense-paidby').value;
+      const category = document.getElementById('expense-category').value;
+      const splitWith = Array.from(document.querySelectorAll('.expense-splitwith:checked')).map(cb => cb.value);
+
+      if (description && amount && splitWith.length > 0) {
+        await addExpense({ description, amount, date, paidBy, category, splitWith });
+        renderApp(); // Re-render to update expense list
+      }
+    });
+    document.querySelectorAll('[data-edit-expense]').forEach(btn => {
+      btn.onclick = async () => {
+        const expenseId = btn.getAttribute('data-edit-expense');
+        const expense = activeGroup.expenses.find(e => e.id === expenseId);
+        showExpenseModal(expense);
+      };
+    });
+    document.querySelectorAll('[data-delete-expense]').forEach(btn => {
+      btn.onclick = async () => {
+        const expenseId = btn.getAttribute('data-delete-expense');
+        await deleteExpense(expenseId);
+        renderApp(); // Re-render to update expense list
+      };
+    });
   });
 }
 
-function showCreateGroupModal() {
+function showCreateGroupForm() {
   showModal('Create New Group', `
     <div class="mb-4">
       <label class="block text-sm font-medium text-gray-700 mb-2">Group Name</label>

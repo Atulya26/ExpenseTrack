@@ -13,6 +13,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css" />
     <!-- Firebase CDN -->
+    <!-- Using compatibility versions for simplicity, but modular is recommended for new projects -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -23,9 +24,10 @@
         <!-- Sidebar content will be rendered by JS -->
       </aside>
       <main class="main-grid">
-        <div id="app-root" style="grid-column: 1 / -1; grid-row: 1 / -1;"></div>
+        <!-- Main content (dashboard sections) will be rendered by JS -->
+        <div id="app-root"></div>
       </main>
     </div>
     <script src="app.js"></script>
   </body>
-</html> 
+</html>

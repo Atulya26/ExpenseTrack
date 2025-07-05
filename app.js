@@ -76,29 +76,42 @@ function renderApp() {
   // Show a message in each section if no group is selected
   if (!activeGroup) {
     appRoot.innerHTML = `
-      <div style="display: contents;">
-        <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">No group selected. Please create or select a group.</section>
-        <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">No group selected.</section>
-        <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">No group selected.</section>
-        <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">No group selected.</section>
-        <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">No group selected.</section>
-      </div>
+      <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">
+        <div class="card-header">Add Expense</div>
+        <div class="text-gray-500">No group selected. Please create or select a group.</div>
+      </section>
+      <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">
+        <div class="card-header">Expense Directory</div>
+        <div class="text-gray-500">No group selected.</div>
+      </section>
+      <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
+        <div class="card-header">Members</div>
+        <div class="text-gray-500">No group selected.</div>
+      </section>
+      <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
+        <div class="card-header">Balances</div>
+        <div class="text-gray-500">No group selected.</div>
+      </section>
+      <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">
+        <div class="card-header">Suggested Settlements</div>
+        <div class="text-gray-500">No group selected.</div>
+      </section>
     `;
     return;
   }
 
   // Generate HTML for each section
-  const membersHtml = generateMembersSection();
-  const expensesHtml = generateExpensesSection();
   const addExpenseHtml = generateAddExpenseForm();
+  const expensesHtml = generateExpensesSection();
+  const membersHtml = generateMembersSection();
   const balancesHtml = generateBalancesSection();
   const settlementsHtml = generateSettlementsSection();
 
   // Construct the main grid layout using CSS Grid properties
   appRoot.innerHTML = `
-    <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">${membersHtml}</section>
     <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">${addExpenseHtml}</section>
     <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">${expensesHtml}</section>
+    <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">${membersHtml}</section>
     <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">${balancesHtml}</section>
     <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">${settlementsHtml}</section>
   `;
@@ -114,7 +127,7 @@ function generateMembersSection() {
   const members = activeGroup.members || [];
   return `
     <div class="card-header"><i data-lucide="users" class="h-5 w-5 text-indigo-600"></i> Members</div>
-    <form id="add-member-form" class="flex flex-col gap-2">
+    <form id="add-member-form" class="flex flex-col gap-2 mb-2">
       <input type="text" id="member-name" placeholder="Member Name" required class="w-full" />
       <input type="email" id="member-email" placeholder="Email (optional)" class="w-full" />
       <button type="submit" class="btn-primary w-full">Add Member</button>
@@ -173,7 +186,7 @@ function generateAddExpenseForm() {
   const today = new Date().toISOString().split('T')[0];
   return `
     <div class="card-header"><i data-lucide="plus-circle" class="h-5 w-5 text-indigo-600"></i> Add Expense</div>
-    <form id="add-expense-form" class="bg-indigo-50 rounded-lg p-4 flex flex-col gap-2">
+    <form id="add-expense-form" class="flex flex-col gap-3">
       <div class="form-group">
         <label for="expense-desc" class="block text-sm font-medium text-gray-700">Description</label>
         <input type="text" id="expense-desc" placeholder="What was this expense for?" required />
@@ -198,18 +211,16 @@ function generateAddExpenseForm() {
           <option value="">Select category...</option>
           <option value="Food">Food</option>
           <option value="Accommodation">Accommodation</option>
-          <option value="Transportation">Transportation</option>
-          <option value="Entertainment">Entertainment</option>
-          <option value="Utilities">Utilities</option>
+          <option value="Travel">Travel</option>
           <option value="Other">Other</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="block text-sm font-medium text-gray-700">Split With</label>
-        <div class="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-white">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Split With</label>
+        <div class="flex flex-wrap gap-4">
           ${members.map(m => `
-            <label class="flex items-center gap-1 text-sm text-gray-800">
-              <input type="checkbox" class="expense-splitwith" value="${m.id}" checked />
+            <label class="flex items-center gap-2">
+              <input type="checkbox" class="accent-indigo-600" name="splitWith" value="${m.id}" checked />
               <span>${m.name}</span>
             </label>
           `).join('')}
@@ -217,7 +228,7 @@ function generateAddExpenseForm() {
       </div>
       <div class="flex gap-2 mt-2">
         <button type="submit" class="btn-primary flex-1">Add Expense</button>
-        <button type="reset" class="btn-secondary flex-1">Clear Form</button>
+        <button type="button" id="clear-expense-form" class="btn-secondary flex-1">Clear Form</button>
       </div>
     </form>
   `;
@@ -230,11 +241,11 @@ function generateAddExpenseForm() {
 function generateBalancesSection() {
   const balances = calculateBalances();
   return `
-    <div class="card-header"><i data-lucide="calculator" class="h-5 w-5 text-indigo-600"></i> Balances</div>
-    <div class="balance-list flex-1 overflow-y-auto">
-      ${balances.length > 0 ? balances.map(b => `
-        <span class="text-gray-700">${b.name}: <span class="font-bold ${b.balance >= 0 ? 'text-green-600' : 'text-red-600'}">$${b.balance.toFixed(2)}</span> ${b.balance >= 0 ? 'gets back' : 'owes'}</span>
-      `).join('') : '<div class="text-center text-gray-500 py-4">No balances yet. Add expenses!</div>'}
+    <div class="card-header"><i data-lucide="file-text" class="h-5 w-5 text-indigo-600"></i> Balances</div>
+    <div class="balance-list">
+      ${Object.keys(balances).length > 0 ? Object.entries(balances).map(([memberId, balance]) => `
+        <div>${getMemberName(memberId)}: $${balance.toFixed(2)} ${balance === 0 ? 'gets back' : balance > 0 ? 'gets back' : 'owes'}</div>
+      `).join('') : '<div class="text-gray-500">No balances yet.</div>'}
     </div>
   `;
 }
@@ -247,11 +258,9 @@ function generateSettlementsSection() {
   const balances = calculateBalances(); // Recalculate balances for settlements
   const settlements = calculateSettlements(balances);
   return `
-    <div class="card-header"><i data-lucide="hand-coins" class="h-5 w-5 text-indigo-600"></i> Suggested Settlements</div>
-    <div class="settlement-list flex-1 overflow-y-auto">
-      ${settlements.length > 0 ? settlements.map(s => `
-        <span class="text-gray-700">${s.from} owes ${s.to} <span class="font-bold text-blue-600">$${s.amount}</span></span>
-      `).join('') : '<div class="text-center text-gray-500 py-4">All settled up! 🎉</div>'}
+    <div class="card-header"><i data-lucide="handshake" class="h-5 w-5 text-indigo-600"></i> Suggested Settlements</div>
+    <div class="settlement-list">
+      ${settlements.length > 0 ? settlements.map(s => `<div>${getMemberName(s.from)} pays ${getMemberName(s.to)} <span class="font-semibold text-green-700">$${s.amount.toFixed(2)}</span></div>`).join('') : '<div class="text-gray-500">All settled up! 🎉</div>'}
     </div>
   `;
 }
@@ -299,7 +308,7 @@ function addEventListeners() {
       const date = document.getElementById('expense-date').value;
       const paidBy = document.getElementById('expense-paidby').value;
       const category = document.getElementById('expense-category').value;
-      const splitWith = Array.from(document.querySelectorAll('.expense-splitwith:checked')).map(cb => cb.value);
+      const splitWith = Array.from(document.querySelectorAll('#add-expense-form input[name=splitWith]:checked')).map(cb => cb.value);
 
       if (description && amount && splitWith.length > 0) {
         await addExpense({ description, amount, date, paidBy, category, splitWith });
@@ -307,10 +316,20 @@ function addEventListeners() {
         addExpenseForm.reset(); // Clear the form
         document.getElementById('expense-date').value = new Date().toISOString().split('T')[0]; // Reset date
         // Re-check all splitWith checkboxes by default
-        document.querySelectorAll('.expense-splitwith').forEach(cb => cb.checked = true);
+        document.querySelectorAll('#add-expense-form input[name=splitWith]').forEach(cb => cb.checked = true);
       } else {
         console.warn('Expense description, amount, and at least one split recipient are required.');
       }
+    };
+  }
+
+  // Clear Expense Form Button
+  const clearExpenseFormBtn = document.getElementById('clear-expense-form');
+  if (clearExpenseFormBtn) {
+    clearExpenseFormBtn.onclick = () => {
+      document.getElementById('add-expense-form').reset();
+      document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+      document.querySelectorAll('#add-expense-form input[name=splitWith]').forEach(cb => cb.checked = true);
     };
   }
 
@@ -686,7 +705,7 @@ function getMemberName(memberId) {
  * @returns {Array<object>} An array of member objects with their calculated balances.
  */
 function calculateBalances() {
-  if (!activeGroup || !activeGroup.members || !activeGroup.expenses) return [];
+  if (!activeGroup || !activeGroup.members || !activeGroup.expenses) return {};
 
   const balances = {};
   activeGroup.members.forEach(member => {
@@ -718,7 +737,7 @@ function calculateBalances() {
     b.balance = b.paid - b.owes;
   });
 
-  return Object.values(balances);
+  return balances;
 }
 
 /**
@@ -728,34 +747,34 @@ function calculateBalances() {
  */
 function calculateSettlements(balances) {
   // Filter out members who are already settled (balance close to zero)
-  const creditors = balances.filter(b => b.balance > 0.01).sort((a, b) => b.balance - a.balance); // Those who are owed money
-  const debtors = balances.filter(b => b.balance < -0.01).sort((a, b) => a.balance - b.balance); // Those who owe money
+  const creditors = Object.entries(balances).filter(([, balance]) => balance > 0.01).sort(([, a], [, b]) => b - a); // Those who are owed money
+  const debtors = Object.entries(balances).filter(([, balance]) => balance < -0.01).sort(([, a], [, b]) => a - b); // Those who owe money
 
   const settlements = [];
   let i = 0, j = 0; // Pointers for creditors and debtors arrays
 
   while (i < creditors.length && j < debtors.length) {
-    const creditor = creditors[i];
-    const debtor = debtors[j];
+    const [creditorId, creditorBalance] = creditors[i];
+    const [debtorId, debtorBalance] = debtors[j];
 
     // Amount to settle is the minimum of what creditor is owed and what debtor owes
-    const amountToSettle = Math.min(creditor.balance, -debtor.balance);
+    const amountToSettle = Math.min(creditorBalance, -debtorBalance);
 
     if (amountToSettle > 0.01) { // Only add settlement if amount is significant
       settlements.push({
-        from: debtor.name,
-        to: creditor.name,
+        from: getMemberName(debtorId),
+        to: getMemberName(creditorId),
         amount: amountToSettle.toFixed(2) // Format to 2 decimal places
       });
     }
 
     // Update balances after settlement
-    creditor.balance -= amountToSettle;
-    debtor.balance += amountToSettle;
+    balances[creditorId].balance -= amountToSettle;
+    balances[debtorId].balance += amountToSettle;
 
     // Move to next creditor/debtor if their balance is settled
-    if (creditor.balance < 0.01) i++;
-    if (debtor.balance > -0.01) j++;
+    if (balances[creditorId].balance < 0.01) i++;
+    if (balances[debtorId].balance > -0.01) j++;
   }
   return settlements;
 }

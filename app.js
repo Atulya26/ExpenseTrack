@@ -72,51 +72,37 @@ function renderApp() {
     appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh]"><div class="bg-white p-6 rounded-xl shadow-lg text-red-700"><h3 class="text-lg font-semibold mb-2">Error:</h3><p>${errorMessage}</p></div></div>`;
     return;
   }
-  // Always render the main grid, even if no group is selected
-  // Show a message in each section if no group is selected
   if (!activeGroup) {
-    appRoot.innerHTML = `
-      <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">
-        <div class="card-header">Add Expense</div>
-        <div class="text-gray-500">No group selected. Please create or select a group.</div>
-      </section>
-      <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">
-        <div class="card-header">Expense Directory</div>
-        <div class="text-gray-500">No group selected.</div>
-      </section>
-      <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-        <div class="card-header">Members</div>
-        <div class="text-gray-500">No group selected.</div>
-      </section>
-      <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">
-        <div class="card-header">Balances</div>
-        <div class="text-gray-500">No group selected.</div>
-      </section>
-      <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">
-        <div class="card-header">Suggested Settlements</div>
-        <div class="text-gray-500">No group selected.</div>
-      </section>
-    `;
+    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh] col-span-full row-span-full"><div class="card text-center text-gray-600"><p class="mb-4">Select an existing group or create a new one to start tracking expenses.</p><button id="create-group-prompt-btn" class="btn-primary">Create New Group</button></div></div>`;
+    document.getElementById('create-group-prompt-btn').onclick = showCreateGroupForm;
     return;
   }
 
-  // Generate HTML for each section
-  const addExpenseHtml = generateAddExpenseForm();
-  const expensesHtml = generateExpensesSection();
+  // Generate HTML for each section (members, expenses, balances, settlements)
   const membersHtml = generateMembersSection();
+  const expensesHtml = generateExpensesSection();
+  const addExpenseHtml = generateAddExpenseForm();
   const balancesHtml = generateBalancesSection();
   const settlementsHtml = generateSettlementsSection();
 
-  // Construct the main grid layout using CSS Grid properties
+  // Render the main dashboard layout (previous working version)
   appRoot.innerHTML = `
-    <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">${addExpenseHtml}</section>
-    <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">${expensesHtml}</section>
-    <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">${membersHtml}</section>
-    <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">${balancesHtml}</section>
-    <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">${settlementsHtml}</section>
+    <div class="main-dashboard">
+      <div class="dashboard-row">
+        <div class="dashboard-col">${membersHtml}</div>
+        <div class="dashboard-col">${addExpenseHtml}</div>
+      </div>
+      <div class="dashboard-row">
+        <div class="dashboard-col">${expensesHtml}</div>
+      </div>
+      <div class="dashboard-row">
+        <div class="dashboard-col">${balancesHtml}</div>
+        <div class="dashboard-col">${settlementsHtml}</div>
+      </div>
+    </div>
   `;
-  lucide.createIcons(); // Re-initialize icons for newly rendered content
-  addEventListeners(); // Re-attach event listeners for dynamic elements
+  lucide.createIcons();
+  addEventListeners();
 }
 
 /**

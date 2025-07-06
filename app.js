@@ -65,7 +65,7 @@ function renderSidebar() {
  */
 function renderApp() {
   if (loading) {
-    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh]"><div class="text-indigo-600 text-xl font-semibold">Loading...</div></div>`;
+    appRoot.innerHTML = `<div class="flex items-center justify-center min-h-[60vh] w-full"><div class="text-indigo-600 text-xl font-semibold">Loading...</div></div>`;
     return;
   }
   if (errorMessage) {
@@ -74,12 +74,10 @@ function renderApp() {
   }
   if (!activeGroup) {
     appRoot.innerHTML = `
-      <div style="display: contents;">
-        <section class="card col-span-1 row-span-1">No group selected. Please create or select a group.</section>
-        <section class="card col-span-2 row-span-1">No group selected.</section>
-        <section class="card col-span-1 row-span-1">No group selected.</section>
-        <section class="card col-span-1 row-span-1">No group selected.</section>
-        <section class="card col-span-1 row-span-1">No group selected.</section>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+        <section class="card md:col-span-2 lg:col-span-3">No group selected. Please create or select a group.</section>
+        <section class="card">No group selected.</section>
+        <section class="card">No group selected.</section>
       </div>
     `;
     return;
@@ -93,13 +91,14 @@ function renderApp() {
   const settlementsHtml = generateSettlementsSection();
 
   // Construct the main grid layout using CSS Grid properties
-  appRoot.innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-4">
-      <section class="card row-span-2">${membersHtml}</section>
-      <section class="card">${addExpenseHtml}</section>
-      <section class="card">${expensesHtml}</section>
-      <section class="card">${balancesHtml}</section>
-      <section class="card">${settlementsHtml}</section>
+  appRoot.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+      <section class="card md:row-span-2">${membersHtml}</section> 
+      <section class="card">${addExpenseHtml}</section>     
+      <section class="card">${expensesHtml}</section>      
+      <section class="card">${balancesHtml}</section>      
+      <section class="card">${settlementsHtml}</section>  
+      ${/* Add more sections as needed within the grid */''}
+      
     </div>
   `;
 
@@ -146,7 +145,7 @@ function generateExpensesSection() {
   const expenses = activeGroup.expenses || [];
   return `
     <div class="card-header"><i data-lucide="file-text" class="h-5 w-5 text-indigo-600"></i> Expense Directory</div>
-    <div class="expense-list flex-1 overflow-y-auto max-h-96">
+    <div class="expense-list flex-1 overflow-y-auto max-h-64">
       ${expenses.length > 0 ? expenses.map(expense => `
         <div class="border border-gray-200 rounded-lg p-3 flex flex-col gap-1">
           <div class="flex items-center justify-between w-full">
@@ -179,7 +178,7 @@ function generateAddExpenseForm() {
   const today = new Date().toISOString().split('T')[0];
   return `
     <div class="card-header"><i data-lucide="plus-circle" class="h-5 w-5 text-indigo-600"></i> Add Expense</div>
-    <form id="add-expense-form" class="bg-indigo-50 rounded-lg p-4 flex flex-col gap-2 max-h-96 overflow-y-auto">
+    <form id="add-expense-form" class="bg-indigo-50 rounded-lg p-4 flex flex-col gap-2 max-h-64 overflow-y-auto">
       <div class="form-group">
         <label for="expense-desc" class="block text-sm font-medium text-gray-700">Description</label>
         <input type="text" id="expense-desc" placeholder="What was this expense for?" required />
@@ -212,7 +211,7 @@ function generateAddExpenseForm() {
       </div>
       <div class="form-group">
         <label class="block text-sm font-medium text-gray-700">Split With</label>
-        <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-white">
+        <div class="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-white">
           ${members.map(m => `
             <label class="flex items-center gap-1 text-sm text-gray-800">
               <input type="checkbox" class="expense-splitwith" value="${m.id}" checked />
@@ -254,7 +253,7 @@ function generateSettlementsSection() {
   const settlements = calculateSettlements(balances);
   return `
     <div class="card-header"><i data-lucide="hand-coins" class="h-5 w-5 text-indigo-600"></i> Suggested Settlements</div>
-    <div class="settlement-list flex-1 overflow-y-auto max-h-48">
+    <div class="settlement-list flex-1 overflow-y-auto max-h-32">
       ${settlements.length > 0 ? settlements.map(s => `
         <span class="text-gray-700">${s.from} owes ${s.to} <span class="font-bold text-blue-600">${formatINR(s.amount)}</span></span>
       `).join('') : '<div class="text-center text-gray-500 py-4">All settled up! 🎉</div>'}

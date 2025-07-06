@@ -74,43 +74,35 @@ function renderApp() {
   }
   if (!activeGroup) {
     appRoot.innerHTML = `
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-        <section class="card md:col-span-2 lg:col-span-3">No group selected. Please create or select a group.</section>
-        <section class="card">No group selected.</section>
-        <section class="card">No group selected.</section>
+      <div class="flex flex-col gap-6 w-full">
+        <section class="card">No group selected. Please create or select a group.</section>
       </div>
     `;
     return;
   }
 
-  // Generate HTML for each section
   const membersHtml = generateMembersSection();
   const expensesHtml = generateExpensesSection();
   const addExpenseHtml = generateAddExpenseForm();
   const balancesHtml = generateBalancesSection();
   const settlementsHtml = generateSettlementsSection();
 
-  // Construct the main grid layout using CSS Grid properties
   appRoot.innerHTML = `
-    <div class="dashboard grid grid-cols-1 md:grid-cols-3 lg:grid-cols-12 gap-4 w-full">
-      <section class="card col-span-1 md:col-span-3 lg:col-span-3 row-span-2">${membersHtml}</section>
-      <section class="card col-span-1 md:col-span-2 lg:col-span-5">${expensesHtml}</section>
-      <section class="card col-span-1 md:col-span-1 lg:col-span-4">${addExpenseHtml}</section>
-      <section class="card col-span-1 md:col-span-1 lg:col-span-4">${balancesHtml}</section>
-      <section class="card col-span-1 md:col-span-1 lg:col-span-4">${settlementsHtml}</section>
+    <div class="dashboard flex flex-col gap-6 w-full">
+      <section class="card">${membersHtml}</section>
+      <section class="card">${expensesHtml}</section>
+      <section class="card">${addExpenseHtml}</section>
+      <section class="card">${balancesHtml}</section>
+      <section class="card">${settlementsHtml}</section>
     </div>
-    <style>
-      .dashboard { display: grid; } /* Ensure grid layout applies */
-    </style>
   `;
 
-  // Apply grid classes to cards instead of inline styles
   document.querySelectorAll('.card').forEach(card => {
     card.classList.add('bg-white', 'rounded-xl', 'shadow-md', 'p-4', 'flex', 'flex-col');
   });
 
-  lucide.createIcons(); // Re-initialize icons for newly rendered content
-  addEventListeners(); // Re-attach event listeners for dynamic elements
+  lucide.createIcons();
+  addEventListeners();
 }
 
 /**

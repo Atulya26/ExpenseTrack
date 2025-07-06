@@ -75,11 +75,11 @@ function renderApp() {
   if (!activeGroup) {
     appRoot.innerHTML = `
       <div style="display: contents;">
-        <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">No group selected. Please create or select a group.</section>
-        <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">No group selected.</section>
-        <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">No group selected.</section>
-        <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">No group selected.</section>
-        <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">No group selected.</section>
+        <section class="card col-span-1 row-span-1">No group selected. Please create or select a group.</section>
+        <section class="card col-span-2 row-span-1">No group selected.</section>
+        <section class="card col-span-1 row-span-1">No group selected.</section>
+        <section class="card col-span-1 row-span-1">No group selected.</section>
+        <section class="card col-span-1 row-span-1">No group selected.</section>
       </div>
     `;
     return;
@@ -94,12 +94,20 @@ function renderApp() {
 
   // Construct the main grid layout using CSS Grid properties
   appRoot.innerHTML = `
-    <section class="card" style="grid-column: 1 / 2; grid-row: 2 / 3;">${membersHtml}</section>
-    <section class="card" style="grid-column: 1 / 2; grid-row: 1 / 2;">${addExpenseHtml}</section>
-    <section class="card" style="grid-column: 2 / 4; grid-row: 1 / 2;">${expensesHtml}</section>
-    <section class="card" style="grid-column: 2 / 3; grid-row: 2 / 3;">${balancesHtml}</section>
-    <section class="card" style="grid-column: 3 / 4; grid-row: 2 / 3;">${settlementsHtml}</section>
+    <div class="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-4">
+      <section class="card row-span-2">${membersHtml}</section>
+      <section class="card">${addExpenseHtml}</section>
+      <section class="card">${expensesHtml}</section>
+      <section class="card">${balancesHtml}</section>
+      <section class="card">${settlementsHtml}</section>
+    </div>
   `;
+
+  // Apply grid classes to cards instead of inline styles
+  document.querySelectorAll('.card').forEach(card => {
+    card.classList.add('bg-white', 'rounded-xl', 'shadow-md', 'p-4', 'flex', 'flex-col');
+  });
+
   lucide.createIcons(); // Re-initialize icons for newly rendered content
   addEventListeners(); // Re-attach event listeners for dynamic elements
 }
@@ -112,7 +120,7 @@ function generateMembersSection() {
   const members = activeGroup.members || [];
   return `
     <div class="card-header"><i data-lucide="users" class="h-5 w-5 text-indigo-600"></i> Members</div>
-    <form id="add-member-form" class="flex flex-col gap-2">
+    <form id="add-member-form" class="flex flex-col gap-2 mb-4">
       <input type="text" id="member-name" placeholder="Member Name" required class="w-full" />
       <input type="email" id="member-email" placeholder="Email (optional)" class="w-full" />
       <button type="submit" class="btn-primary w-full">Add Member</button>
@@ -138,7 +146,7 @@ function generateExpensesSection() {
   const expenses = activeGroup.expenses || [];
   return `
     <div class="card-header"><i data-lucide="file-text" class="h-5 w-5 text-indigo-600"></i> Expense Directory</div>
-    <div class="expense-list flex-1 overflow-y-auto max-h-64">
+    <div class="expense-list flex-1 overflow-y-auto max-h-96">
       ${expenses.length > 0 ? expenses.map(expense => `
         <div class="border border-gray-200 rounded-lg p-3 flex flex-col gap-1">
           <div class="flex items-center justify-between w-full">
@@ -171,7 +179,7 @@ function generateAddExpenseForm() {
   const today = new Date().toISOString().split('T')[0];
   return `
     <div class="card-header"><i data-lucide="plus-circle" class="h-5 w-5 text-indigo-600"></i> Add Expense</div>
-    <form id="add-expense-form" class="bg-indigo-50 rounded-lg p-4 flex flex-col gap-2">
+    <form id="add-expense-form" class="bg-indigo-50 rounded-lg p-4 flex flex-col gap-2 max-h-96 overflow-y-auto">
       <div class="form-group">
         <label for="expense-desc" class="block text-sm font-medium text-gray-700">Description</label>
         <input type="text" id="expense-desc" placeholder="What was this expense for?" required />
@@ -204,7 +212,7 @@ function generateAddExpenseForm() {
       </div>
       <div class="form-group">
         <label class="block text-sm font-medium text-gray-700">Split With</label>
-        <div class="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-white">
+        <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-white">
           ${members.map(m => `
             <label class="flex items-center gap-1 text-sm text-gray-800">
               <input type="checkbox" class="expense-splitwith" value="${m.id}" checked />
@@ -229,7 +237,7 @@ function generateBalancesSection() {
   const balances = calculateBalances();
   return `
     <div class="card-header"><i data-lucide="calculator" class="h-5 w-5 text-indigo-600"></i> Balances</div>
-    <div class="balance-list flex-1 overflow-y-auto">
+    <div class="balance-list flex-1 overflow-y-auto max-h-48">
       ${balances.length > 0 ? balances.map(b => `
         <span class="text-gray-700">${b.name}: <span class="font-bold ${b.balance >= 0 ? 'text-green-600' : 'text-red-600'}">${formatINR(b.balance)}</span> ${b.balance >= 0 ? 'gets back' : 'owes'}</span>
       `).join('') : '<div class="text-center text-gray-500 py-4">No balances yet. Add expenses!</div>'}
@@ -246,7 +254,7 @@ function generateSettlementsSection() {
   const settlements = calculateSettlements(balances);
   return `
     <div class="card-header"><i data-lucide="hand-coins" class="h-5 w-5 text-indigo-600"></i> Suggested Settlements</div>
-    <div class="settlement-list flex-1 overflow-y-auto">
+    <div class="settlement-list flex-1 overflow-y-auto max-h-48">
       ${settlements.length > 0 ? settlements.map(s => `
         <span class="text-gray-700">${s.from} owes ${s.to} <span class="font-bold text-blue-600">${formatINR(s.amount)}</span></span>
       `).join('') : '<div class="text-center text-gray-500 py-4">All settled up! 🎉</div>'}

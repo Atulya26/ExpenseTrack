@@ -5,15 +5,15 @@ body {
   background: #f4f5f7;
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
+  overflow-x: hidden;
 }
 
 .dashboard-container {
   display: flex;
   min-height: 100vh;
   background: #f4f5f7;
-  padding: 2rem; /* Add overall padding */
-  gap: 2rem; /* Gap between sidebar and main content */
+  padding: 2rem;
+  gap: 2rem;
 }
 
 .sidebar {
@@ -27,22 +27,19 @@ body {
   gap: 1.5rem;
   min-width: 260px;
   max-width: 340px;
-  height: fit-content; /* Adjust height to content */
-  align-self: flex-start; /* Align to top */
+  height: fit-content;
+  align-self: flex-start;
 }
 
 .main-grid {
-  flex: 1;
-  display: grid;
-  /* Define grid layout based on the screenshot */
-  grid-template-columns: 2fr 1.2fr 1.2fr; /* Three columns, first one wider */
-  grid-template-rows: auto auto; /* Two rows, height determined by content */
-  gap: 2rem; /* Gap between grid items */
-  align-content: flex-start; /* Align content to the top of the grid container */
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
 }
 
 #app-root {
-  display: contents; /* Allows child elements to be direct grid items */
+  display: contents;
 }
 
 .card {
@@ -53,7 +50,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  min-height: 0; /* Allow cards to shrink */
+  min-height: 0;
 }
 
 .card-header {
@@ -63,7 +60,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #374151; /* Darker text for headers */
+  color: #374151;
 }
 
 .form-group {
@@ -72,9 +69,9 @@ body {
 
 input, select, textarea {
   width: 100%;
-  padding: 0.75rem 1rem; /* Increased padding */
-  border: 1px solid #d1d5db; /* Lighter border */
-  border-radius: 0.75rem; /* More rounded corners */
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
   font-size: 1rem;
   background: #f9fafb;
   margin-top: 0.25rem;
@@ -84,15 +81,15 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Focus ring */
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 button {
   font-family: inherit;
   font-size: 1rem;
   border: none;
-  border-radius: 0.75rem; /* More rounded corners */
-  padding: 0.75rem 1.5rem; /* Increased padding */
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
   display: inline-flex;
@@ -102,7 +99,7 @@ button {
 }
 
 button:active {
-  transform: translateY(1px); /* Slight press effect */
+  transform: translateY(1px);
 }
 
 .btn-primary {
@@ -137,16 +134,15 @@ button:active {
 .member-list, .expense-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem; /* Increased gap */
+  gap: 0.75rem;
 }
 
 .balance-list, .settlement-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem; /* Increased gap */
+  gap: 0.75rem;
 }
 
-/* Specific styling for list items */
 .member-list > div, .expense-list > div {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -167,7 +163,6 @@ button:active {
   width: 100%;
 }
 
-/* Modal Styling */
 .modal {
   z-index: 1000;
 }
@@ -190,18 +185,10 @@ button:active {
   gap: 1rem;
 }
 
-/* Responsive Adjustments */
 @media (max-width: 1200px) {
   .main-grid {
-    grid-template-columns: 1fr 1fr; /* Two columns */
-    grid-template-rows: auto auto auto; /* Three rows */
+    gap: 1.5rem;
   }
-  /* Adjust specific card placements for 2-column layout */
-  .card[style*="grid-column: 1 / 2; grid-row: 1 / 2;"] { grid-column: 1 / 2; grid-row: 1 / 2; } /* Members */
-  .card[style*="grid-column: 2 / 4; grid-row: 1 / 2;"] { grid-column: 2 / 3; grid-row: 1 / 2; } /* Expense Directory */
-  .card[style*="grid-column: 1 / 2; grid-row: 2 / 3;"] { grid-column: 1 / 3; grid-row: 2 / 3; } /* Add Expense Form (spans 2 columns) */
-  .card[style*="grid-column: 2 / 3; grid-row: 2 / 3;"] { grid-column: 1 / 2; grid-row: 3 / 4; } /* Balances */
-  .card[style*="grid-column: 3 / 4; grid-row: 2 / 3;"] { grid-column: 2 / 3; grid-row: 3 / 4; } /* Settlements */
 }
 
 @media (max-width: 900px) {
@@ -217,15 +204,9 @@ button:active {
     padding: 1.5rem;
   }
   .main-grid {
-    margin: 0;
     width: 100%;
-    grid-template-columns: 1fr; /* Single column */
-    grid-template-rows: auto;
-    gap: 1.5rem;
   }
-  /* All cards stack vertically in single-column layout */
   .card {
-    grid-column: 1 / -1 !important; /* Force all cards to span full width */
-    grid-row: auto !important; /* Let rows auto-size */
+    width: 100%;
   }
 }

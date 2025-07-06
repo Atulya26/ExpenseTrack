@@ -243,14 +243,30 @@ function generateBalancesSection() {
  * @returns {string} HTML string for the settlements section.
  */
 function generateSettlementsSection() {
-  const balances = calculateBalances(); // Recalculate balances for settlements
+  const balances = calculateBalances();
   const settlements = calculateSettlements(balances);
+  
   return `
-    <div class="card-header"><i data-lucide="hand-coins" class="h-5 w-5 text-indigo-600"></i> Suggested Settlements</div>
-    <div class="settlement-list flex-1 overflow-y-auto max-h-32">
+    <div class="space-y-3 max-h-64 overflow-y-auto">
       ${settlements.length > 0 ? settlements.map(s => `
-        <span class="text-gray-700">${s.from} owes ${s.to} <span class="font-bold text-blue-600">${formatINR(s.amount)}</span></span>
-      `).join('') : '<div class="text-center text-gray-500 py-4">All settled up! 🎉</div>'}
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <i data-lucide="arrow-right" class="h-4 w-4 text-blue-600 mr-2"></i>
+              <span class="text-sm text-gray-700">
+                <span class="font-medium">${s.from}</span> pays <span class="font-medium">${s.to}</span>
+              </span>
+            </div>
+            <span class="font-bold text-blue-700">${formatINR(s.amount)}</span>
+          </div>
+        </div>
+      `).join('') : `
+        <div class="text-center py-8 text-gray-500">
+          <i data-lucide="hand-coins" class="h-12 w-12 mx-auto mb-3 text-gray-300"></i>
+          <p class="text-sm">All settled up!</p>
+          <p class="text-xs">No settlements needed 🎉</p>
+        </div>
+      `}
     </div>
   `;
 }

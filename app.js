@@ -91,15 +91,17 @@ function renderApp() {
   const settlementsHtml = generateSettlementsSection();
 
   // Construct the main grid layout using CSS Grid properties
-  appRoot.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
-      <section class="card md:col-span-1 md:row-span-2">${membersHtml}</section> 
-      <section class="card md:col-span-2">${expensesHtml}</section>
-      <section class="card">${addExpenseHtml}</section>
-      <section class="card">${balancesHtml}</section>
-      <section class="card">${settlementsHtml}</section>
-      ${/* Add more sections as needed within the grid */''}
-      
+  appRoot.innerHTML = `
+    <div class="dashboard grid grid-cols-1 md:grid-cols-3 lg:grid-cols-12 gap-4 w-full">
+      <section class="card col-span-1 md:col-span-3 lg:col-span-3 row-span-2">${membersHtml}</section>
+      <section class="card col-span-1 md:col-span-2 lg:col-span-5">${expensesHtml}</section>
+      <section class="card col-span-1 md:col-span-1 lg:col-span-4">${addExpenseHtml}</section>
+      <section class="card col-span-1 md:col-span-1 lg:col-span-4">${balancesHtml}</section>
+      <section class="card col-span-1 md:col-span-1 lg:col-span-4">${settlementsHtml}</section>
     </div>
+    <style>
+      .dashboard { display: grid; } /* Ensure grid layout applies */
+    </style>
   `;
 
   // Apply grid classes to cards instead of inline styles
